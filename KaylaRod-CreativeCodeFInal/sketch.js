@@ -4,7 +4,9 @@ let scene = 1;
 //images
 let kitchenBg;
 let odysseusSprite;
+let odysseusShockedSprite;
 let breadImage;
+let lightbulbImage;
 
 //sprite movement
 let odysseusX = -100; // Start off-screen
@@ -18,32 +20,50 @@ let thoughtIndex = 0;
 let sound;
 let magicSound;
 let burpSound;
+let munchSound;
+let fartSound;
+let ideaSound;
+
 
 //browser blocks automatic sounds
 let soundEnabled = false;
 
 //Single sound - no loop
+let munchPlayed = false;
 let burpPlayed = false;
+let fartPlayed = false;
+let ideaSoundPlayed = false;
 
 // Timer
 let thoughtTimer = 0;
 let breadStartTime = 0;
+let fartStartTime = 0;
+let dialogStartTime = 0;
+let munchStartTime = 0;
+
+
+let lightbulbDisplayed = false;
 
 
 function preload() {
   soundFormats('mp3'); //p5 reference 
   kitchenBg = loadImage('images/kitchen.jpg'); 
   odysseusSprite = loadImage('images/Odysseus-side.png'); 
+  odysseusShockedSprite = loadImage('images/shocked.png');
+  lightbulbImage = loadImage('images/lightbulb.png');
   breadImage = loadImage('images/yummy.jpg'); 
   magicSound = loadSound('sound/magic.mp3'); 
   burpSound = loadSound('sound/burp.mp3'); 
+  munchSound = loadSound('sound/munch.mp3');
+  fartSound = loadSound('sound/fart.mp3');
+  ideaSound = loadSound('sound/idea.mp3');
 }
 
 
 function setup() {
   createCanvas(1000,660);
   textAlign(CENTER, CENTER);
-  textSize(24);
+  textSize(20);
   fill(255);
 }
 
@@ -62,6 +82,8 @@ function draw() {
 
     } else if (scene === 3) {
       eatingScene();
+    } else if (scene === 4) {
+      postEatingScene();
     }
   }
 }
@@ -98,7 +120,7 @@ function showIntro() {
   fill(255);
   ellipse(odysseusX + 50, odysseusY - 50, 150, 75);
   fill(0);
-  textSize(16);
+  textSize(20);
   textAlign(CENTER);
   text(thoughtText[thoughtIndex], odysseusX + 50, odysseusY - 50);
 
@@ -143,16 +165,68 @@ function eatingScene() {
   image(odysseusSprite, odysseusX, odysseusY, 200, 322);
 
   fill(255);
-  textSize(32);
+  textSize(20);
   text("MUNCH! GULP!", width / 2, height / 2 - 50);
 
-  
-  if (burpPlayed == false) { //this loop is so the burp sound effect only plays once
-    playSound(burpSound); //plays burp sound file
-    burpPlayed = true; //sets true so the loop ends
+  if (munchStartTime === 0) {
+    munchStartTime = millis(); // Record the start time for the munch sound
+    playSound(munchSound); // Play the munch sound
+  }
+
+  if (millis() - munchStartTime > 3000 && !burpPlayed) {
+    playSound(burpSound); // Play burp sound after munch
+    burpPlayed = true; // Ensure burp sound only plays once
+  }
+
+  if (burpPlayed && millis() - munchStartTime > 6000) {
+    scene = 4;
+    dialogStartTime = millis(); // Start the dialog timer
   }
 
 }
+
+function postEatingScene() {
+  image(kitchenBg, 0, 0);
+
+  if (fartStartTime === 0) {
+    // Show text
+    fill(255);
+    ellipse(odysseusX + 50, odysseusY - 50, 200, 100);
+    fill(0);
+    text("That was yum-", odysseusX + 50, odysseusY - 50);
+
+    fartStartTime = millis();
+    playSound(fartSound); // Play fart sound
+  }
+
+  // show shocked sprite until the fart sound finishes playing
+  //found duration() in p5 reference
+  if (millis() - fartStartTime < fartSound.duration() * 1000) {
+    image(odysseusShockedSprite, odysseusX, odysseusY, 200, 322);
+  } else {
+    // Switch back to original odysseus
+    image(odysseusSprite, odysseusX, odysseusY, 200, 322);
+
+    let timeSinceFartEnd = millis() - (fartStartTime + fartSound.duration() * 1000);
+
+    // show lightbulb for 2 seconds
+    if (timeSinceFartEnd < 2000) {
+      if (!ideaSoundPlayed) {
+        playSound(ideaSound); // Play the idea sound once
+        ideaSoundPlayed = true; // Mark as played
+      }
+      image(lightbulbImage, odysseusX + 50, odysseusY - 200, 100, 150);
+    } else {
+      // Show text after the lightbulb disappears
+      fill(255);
+      ellipse(odysseusX + 50, odysseusY - 50, 300, 100);
+      fill(0);
+      text("I need to find that pink stuff...", odysseusX + 50, odysseusY - 50);
+    }
+  }
+}
+
+
 
 
 function playSound(sound) {
