@@ -15,6 +15,9 @@ let boohbahImage;
 let blurBathroomImg;
 let mirrorImage;
 let manBabyImg;
+let medicineShelfImg
+let odysseusLayingSprite;
+let theEndImage;
 
 //sprite movement
 let odysseusX = -100; // Start off-screen
@@ -33,7 +36,13 @@ let fartSound;
 let ideaSound;
 let walkSound;
 let manBabySound;
-
+let doorSound;
+let yaySound;
+let gulpSound;
+let snoreSound
+let yawnSound; 
+let hungrySound;
+let happySong;
 
 //browser blocks automatic sounds
 let soundEnabled = false;
@@ -44,36 +53,50 @@ let burpPlayed = false;
 let fartPlayed = false;
 let ideaSoundPlayed = false;
 let angrySoundPlayed = false;
-let cookieStartTime = 0;
-let boohbahStartTime = 0;
-let walkStartTime = 0;
+let medicineShelfShown = false;
+let textState = 0;
+let hungryPlayed = false;
+let yawnPlayed = false;
+let snorePlayed = false;
+let odysseusAsleep = false;
+let moveOffScreen = false;
 
 
 // Timer
+let cookieStartTime = 0;
+let boohbahStartTime = 0;
+let walkStartTime = 0;
+let postBabyManStartTime = 0;
+let medicineSceneStartTime = 0;
 let thoughtTimer = 0;
 let breadStartTime = 0;
 let fartStartTime = 0;
 let dialogStartTime = 0;
 let munchStartTime = 0;
 let textStartTime = 0; 
-
-
-let lightbulbDisplayed = false;
+let wakeUpTimer = 0; 
+let hungrySoundTimer = 0;
+let blackScreenTimer = 0; 
+let weirdFaceStartTime = 0;
+let uhOhTimer = 0;
 
 //mirror distortions 
-let weirdFaceStartTime = 0; // Timer to manage scene steps
-let videoDisplayed = false; // Flag for video display
-let textDisplayed = false; // Flag for text overlay
 let capture; // Video capture
-let gridSize = 10; // Number of rows and columns in the grid
+let gridSize = 10; 
 let cellWidth, cellHeight;
 let weirdFaceImg;
 let videoGraphics;
-
-let mirrorX = 330; // X position of the mirror
-let mirrorY = 132; // Y position of the mirror
-let mirrorWidth = 310; // Width of the mirror
+let mirrorX = 330; 
+let mirrorY = 132; 
+let mirrorWidth = 310;
 let mirrorHeight = 232;
+let fadeBlack = 0; 
+
+//bools
+let videoDisplayed = false;
+let textDisplayed = false; 
+let lightbulbDisplayed = false;
+let manBabyFinished = false;
 
 
 function preload() {
@@ -90,6 +113,9 @@ function preload() {
   mirrorImage = loadImage('images/mirror.jpg');
   manBabyImg = loadImage('images/manBaby.png');
   weirdFaceImg = loadImage("images/mirror.jpg");
+  medicineShelfImg = loadImage('images/medicine-shelf.jpg');
+  odysseusLayingSprite = loadImage('images/odysseusLaying.png');
+  theEndImage = loadImage('images/theEnd.jpg');
 
 //sounds
   magicSound = loadSound('sound/magic.mp3'); 
@@ -100,6 +126,13 @@ function preload() {
   angrySound = loadSound('sound/angry.mp3');
   walkSound = loadSound('sound/walk.mp3');
   manBabySound = loadSound('sound/manBaby.mp3');
+  doorSound = loadSound('sound/door.mp3');
+  yaySound = loadSound('sound/yay.mp3');
+  gulpSound = loadSound('sound/gulp.mp3');
+  snoreSound = loadSound('sound/snore.mp3');
+  yawnSound = loadSound('sound/yawn.mp3');
+  hungrySound = loadSound('sound/hungry.mp3');
+  happySong = loadSound('sound/happyLittleSong.mp3');
 }
 
 
@@ -120,37 +153,68 @@ function setup() {
 
 function draw() {
   if (!soundEnabled) {
-    // Display prompt until sound is enabled
+    // Display the initial sound prompt if sound is not enabled
     background(0);
     textSize(30);
-    text("Odysseus' Ergot Poison party", width / 2, height / 2.5);
+    text("Odysseus' Ergot Poison Party", width / 2, height / 2.5);
     textSize(20);
     text("Click anywhere to enable sound", width / 2, height / 2);
   } else {
-    background(0); // Clear the screen
+    // Scene-based logic
     if (scene === 1) {
-      showIntro();
-
-    } else if (scene === 2) {
-      focusOnBread();
-
-    } else if (scene === 3) {
-      eatingScene();
-    } else if (scene === 4) {
-      postEatingScene();
-    } else if (scene === 5){
-      thinkScene();
-    } else if (scene === 6) {
-      odysseusWalkOffScene();
-    } else if (scene === 7){
-      blurryWalk();
-    }else if (scene === 8){
-      weirdFace();
-    }else if (scene === 9){
-      babyMan();
+      showIntro(); // Scene 1: Introduction scene
+    } 
+    else if (scene === 2) {
+      focusOnBread(); // Scene 2: Focus on the bread
+    } 
+    else if (scene === 3) {
+      eatingScene(); // Scene 3: Odysseus eating
+    } 
+    else if (scene === 4) {
+      postEatingScene(); // Scene 4: After eating
+    } 
+    else if (scene === 5) {
+      thinkScene(); // Scene 5: Thinking about the medicine
+    } 
+    else if (scene === 6) {
+      odysseusWalkOffScene(); // Scene 6: Odysseus walks off-screen
+    } 
+    else if (scene === 7) {
+      blurryWalk(); // Scene 7: Blurry walk effect
+    } 
+    else if (scene === 8) {
+      weirdFace(); // Scene 8: Weird mirror distortion
+    } 
+    else if (scene === 9) {
+      babyMan(); // Scene 9: Baby-Man scene
+    } 
+    else if (scene === 10) {
+      postBabyManScene(); // Scene 10: Returning to mirror and "what's going on" text
+    } 
+    else if (scene === 11) {
+      displayMedicineScene(); // Scene 11: Medicine shelf appears
+    } 
+    else if (scene === 12) {
+      blackScreenWithGulp(); // Scene 12: Black screen with gulp sound
+    } 
+    else if (scene === 13) {
+      displayCabinetWithText(); // Scene 13: Cabinet with "I feel sleepyyy" text
+    } 
+    else if (scene === 14) {
+      fadeToBlackScene(); // Scene 14: Fade to black
+    } 
+    else if (scene === 15) {
+      snoringScene(); // Scene 15: Odysseus sleeping
+    }
+    else if (scene === 16) {
+      wakeUpScene(); // Scene 16: Odysseus waking up
+    }
+    else if (scene === 17) {
+      showEndScene(); // Scene 18: Happy ending
     }
   }
 }
+
 
 function mousePressed() {
   if (!soundEnabled) {
@@ -171,6 +235,7 @@ function mousePressed() {
   }
 }
 
+// Scene 1: Introduction scene
 function showIntro() {
   image(kitchenBg, 0, 0); 
 
@@ -204,6 +269,8 @@ function showIntro() {
   }
 }
 
+
+// Scene 2: Focus on the bread
 function focusOnBread() {
   if (breadStartTime === 0) {
     breadStartTime = millis();
@@ -221,6 +288,7 @@ function focusOnBread() {
 }
 
 
+// Scene 3: Odysseus eating
 function eatingScene() {
   // re-do kitchen scene layout
   image(kitchenBg, 0, 0); 
@@ -247,6 +315,8 @@ function eatingScene() {
 
 }
 
+
+// Scene 4: After eating
 function postEatingScene() {
   image(kitchenBg, 0, 0);
 
@@ -304,7 +374,7 @@ function postEatingScene() {
 }
 
 
-
+// Scene 5: Thinking about the medicine
 function thinkScene() {
   if (cookieStartTime === 0) {
     cookieStartTime = millis(); 
@@ -364,6 +434,8 @@ function thinkScene() {
   }
 }
 
+
+// Scene 6: Odysseus walks off-screen
 function odysseusWalkOffScene() {
   if (odysseusX < width) {
     image(kitchenBg, 0, 0); 
@@ -379,6 +451,8 @@ function odysseusWalkOffScene() {
   
 }
 
+
+// Scene 7: Blurry walk effect
 function blurryWalk() {
 
   image(blurBathroomImg, 0, 0, width, height);
@@ -460,16 +534,15 @@ function imageDistortion() {
 
 
 function displayVideoCapture() {
-  // Render the static mirror image as the background
+  // keeps static background image
   image(weirdFaceImg, 0, 0, width, height); // Original mirror image (not distorted)
 
-  // Draw the video capture on the separate graphics layer
+  // Video capture 
   videoGraphics.image(capture, 0, 0, videoGraphics.width, videoGraphics.height);
-  videoGraphics.filter(INVERT); // Apply invert filter only on the graphics layer
+  //inverted filter
+  videoGraphics.filter(INVERT); 
 
-  // Render the inverted video graphics onto the canvas
-  let videoX = width / 2 - videoGraphics.width / 2;
-  let videoY = height / 2 - videoGraphics.height / 2;
+  // Video capture displayed ontop of mirror
   image(videoGraphics, mirrorX, mirrorY, mirrorWidth, mirrorHeight);
 }
 
@@ -487,33 +560,25 @@ function displayTextOverlay() {
 
   if (timePassed < 3000) {
     // 1st message for 3 seconds
-    text("What's happening?!", width / 2, height - 100);
-  } else if (timePassed >= 3000 && timePassed < 6000) {
-    // 2nd message after 3 seconds
-    text("Uh Help me out!!", width / 2, height - 100);
-  } else if (timePassed >= 6000) {
-    // 3rd message after 6 seconds
-    text("Click the screen or something!! I don't know?!?!", width / 2, height - 100);
+    text("What's happening?! Who AM I??", width / 2, height - 100);
   }
 }
 
 
 
 
-
+// Scene 8: Weird mirror distortion
 function weirdFace() {
   if (weirdFaceStartTime === 0) {
-    // start time when function is called
     weirdFaceStartTime = millis(); 
   }
-
   let timePassed = millis() - weirdFaceStartTime;
 
   if (timePassed < 4000) {
     // call image distortion function 
     imageDistortion();
   } else if (timePassed >= 4000 && timePassed < 9000) {
-    // turn camera from 4 to 9 seconds
+    // turn camera on from 4 to 9 seconds
     if (!videoDisplayed) {
       //checks if this is only shown once 
       videoDisplayed = true; 
@@ -534,64 +599,240 @@ function weirdFace() {
 
 
 
-
+//Scene 9: Baby-Man scene
 function babyMan() {
-  // Play the sound if not already playing
-  if (!manBabySound.isPlaying()) {
-    manBabySound.play();
+  if (!manBabyFinished) {
+    manBabySound.play(); // Play sound ONCE
+    manBabyFinished = true; // Prevent it from playing again
   }
 
   background(0);
-  let x = 0; 
-  let y = 10; 
-  let counter = 0; 
-  let inputText = "Am I a Man or Am I a Baby? "; 
+  let x = 0;
+  let y = 10;
+  let counter = 0;
+  let inputText = "Am I a Man or Am I a Baby? ";
 
-  // Font size parameters
-  let fontSizeMax = 20;
-  let fontSizeMin = 10;
-  let lineSpacing = 12; // Line height
-  let letterSpacing = 0.5; // Space between letters
-
-  manBabyImg.loadPixels(); 
-
+  manBabyImg.loadPixels();
 
   while (y < height) {
-    // x and y coordinate of image pixel
+    // map x and y coordinate of image pixel
+    //round them bc there cant be half a pixle
     let imgX = round(map(x, 0, width, 0, manBabyImg.width));
     let imgY = round(map(y, 0, height, 0, manBabyImg.height));
 
     //pixel color at coordinate
     let c = color(manBabyImg.get(imgX, imgY));
-    let greyscale = red(c) * 0.222 + green(c) * 0.707 + blue(c) * 0.071; // Convert to greyscale
 
-    //font size based on brightness
-    let fontSize = map(greyscale, 0, 255, fontSizeMax, fontSizeMin);
-    fontSize = max(fontSize, 1); 
+    //calculates brighness based off RGB values
+    let RGB = red(c) + green(c) + blue(c);
+    
+    // min and max font sizes
+    let fontSize = map(RGB, 0, 255 * 3, 30, 5); 
+     fontSize = max(fontSize, 1);
 
-    push();
-    translate(x, y); 
-    textSize(fontSize); 
-    fill(c); 
+    push(); 
+    translate(x, y);
+    textSize(fontSize);
+    fill(c);
 
-    // iterate through text input
-    let letter = inputText.charAt(counter % inputText.length); 
-    text(letter, 0, 0); 
-
-    let letterWidth = textWidth(letter) + letterSpacing; 
-    x += letterWidth; 
+    //draw current char
+    let letter = inputText.charAt(counter % inputText.length);
+    text(letter, 0, 0);
+    x += textWidth(letter) + 0.5;
     pop();
 
-    // line breaks
-    if (x + letterWidth >= width) {
-      x = 0; // Reset to the beginning of the row
-      y += lineSpacing; // Move down to the next row
-    }
 
-    counter++; // Move to the next char
+    if (x >= width) {
+      x = 0; //reset x 
+      y += 12; //move down line
+    }
+    counter++;
   }
-  noLoop(); 
+
+  // Transition to next scene after sound ends
+  if (!manBabySound.isPlaying() && manBabyFinished) {
+    scene = 10; // Move to the next scene
+    postBabyManStartTime = millis();
+  }
 }
+
+
+// Scene 10: Returning to mirror and "what's going on" text
+function postBabyManScene() {
+  let timeElapsed = millis() - postBabyManStartTime;
+
+  if (timeElapsed < 3000) {
+    background(0);
+    image(mirrorImage, 0, 0, width, height);
+    fill(255);
+    textSize(30);
+    //show text for 3 seconds
+    text("I don't know what's going on anymore...", width / 2, height - 100);
+  } else if (timeElapsed < 6000) {
+    background(0);
+    image(mirrorImage, 0, 0, width, height);
+    fill(255);
+    textSize(30);
+    //show text for next 3 seconds
+    text("Oh yeah, my medicine!", width / 2, height - 100);
+  } else if (!doorSound.isPlaying()) {
+    background(0);
+    doorSound.play();
+    scene = 11;
+    medicineSceneStartTime = millis();
+  }
+}
+
+
+// Scene 11: Medicine shelf appears
+function displayMedicineScene() {
+  if (medicineSceneStartTime === 0) medicineSceneStartTime = millis();
+  let timeElapsed = millis() - medicineSceneStartTime;
+
+  if (timeElapsed < yaySound.duration() * 1000 + 2000) {
+    // Display medicine shelf and play yay sound
+    image(medicineShelfImg, 0, 0, width, height);
+    if (!yaySound.isPlaying()) yaySound.play();// Play the "yay" sound if it's not already playing
+  } else {
+    scene = 12; 
+    blackScreenTimer = millis();
+  }
+}
+
+
+// Scene 12: Fade to black
+function blackScreenWithGulp() {
+  background(0);
+
+  if (!gulpSound.isPlaying() && millis() - blackScreenTimer > 500) {
+    gulpSound.play(); // Play gulp sound after black screen
+  }
+
+  if (millis() - blackScreenTimer > gulpSound.duration() * 1000 + 2000) {
+    scene = 13; // next scene
+    medicineSceneStartTime = millis();
+  }
+}
+
+
+// Scene 13: Snoring + Laying Down
+function displayCabinetWithText() {
+  if (medicineSceneStartTime === 0) medicineSceneStartTime = millis();
+  let timeElapsed = millis() - medicineSceneStartTime;
+
+  image(medicineShelfImg, 0, 0, width, height);
+  fill(255);
+  textSize(30);
+  text("I feel sleepyyy...", width / 2, height / 2 + 100);
+
+  if (timeElapsed > 2000) {
+    scene = 14; // Move to fade to black
+    fadeBlack = 0;
+  }
+}
+
+
+// Scene 14: Waking Up
+function fadeToBlackScene() {
+  background(0, 0, 0, fadeBlack); // Gradual fade
+  fadeBlack += 5;
+
+  if (fadeBlack >= 255 && !snorePlayed) {
+    snoreSound.play();
+    snorePlayed = true;
+  }
+
+  if (snorePlayed && !snoreSound.isPlaying()) {
+    scene = 15; // Move to Odysseus lying down
+    wakeUpTimer = millis();
+  }
+}
+
+
+// Scene 15: Hungry and Lunch Scene
+function snoringScene() {
+  image(blurBathroomImg, 0, 0, width, height);
+  image(odysseusLayingSprite, width / 2 - 100, height / 2 - 100, 300, 200);
+
+  if (millis() - wakeUpTimer > 2000 && !yawnPlayed) {
+    yawnSound.play();
+    yawnPlayed = true;
+  }
+
+  if (yawnPlayed && !yawnSound.isPlaying()) {
+    scene = 16; // Move to waking up
+    wakeUpTimer = millis();
+  }
+}
+
+
+// Scene 16: Waking up with hungry sound
+function wakeUpScene() {
+  image(blurBathroomImg, 0, 0, width, height);
+  image(odysseusSprite, width / 2 - 100, height / 2 - 150, 200, 322);
+
+  fill(255);
+  textSize(30);
+  textAlign(CENTER, CENTER);
+
+  // Display "Wow, how long was I asleep for?"
+  if (uhOhTimer === 0) {
+    text("Wow, how long was I asleep for?", width / 2, height / 2 + 100);
+    if (!hungryPlayed && millis() - wakeUpTimer > 3000) {
+      hungrySound.play();
+      hungryPlayed = true;
+    }
+    // Start timer for "Uh Oh..." text
+    if (hungryPlayed && !hungrySound.isPlaying()) {
+      uhOhTimer = millis();
+    }
+  }
+
+  // Display "Uh Oh..." for 2 seconds
+  if (uhOhTimer > 0) {
+    let elapsed = millis() - uhOhTimer;
+    if (elapsed < 2000) {
+      text("Uh Oh...", width / 2, height / 2 + 150);
+    } else {
+      // After 2 seconds, go to the final ending scene
+      scene = 17;
+    }
+  }
+}
+
+
+// // Scene 17: Odysseus goes for lunch
+// function hungryAndLunchScene() {
+//   image(blurBathroomImg, 0, 0, width, height);
+
+//   if (!moveOffScreen) moveOffScreen = true;
+
+//   if (moveOffScreen) {
+//     odysseusX += 4;
+//     image(odysseusSprite, odysseusX, height / 2, 200, 322);
+//   }
+
+//   fill(255);
+//   textSize(30);
+//   text("I think it's time for lunch!", width / 2, height / 2 + 100);
+
+//   if (odysseusX > width) {
+//     scene = 18; // Move to the final end scene
+//   }
+// }
+
+
+//scene 17: ending scene
+function showEndScene() {
+  background(0);
+  image(theEndImage, 0, 0, width, height); // Display the uploaded "theEnd.jpg"
+
+  // Play happy little song only once
+  if (!happySong.isPlaying()) {
+    happySong.play();
+  }
+}
+
 
 function playSound(sound) {
   if (sound && !sound.isPlaying()) { //if the sound file exists and isn't already playing
