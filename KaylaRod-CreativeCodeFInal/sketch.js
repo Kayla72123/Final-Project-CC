@@ -79,6 +79,9 @@ let hungrySoundTimer = 0;
 let blackScreenTimer = 0; 
 let weirdFaceStartTime = 0;
 let uhOhTimer = 0;
+let captureStartTime = 0;
+let transitionStartTime;
+let transitionDuration = 3000; 
 
 //mirror distortions 
 let capture; // Video capture
@@ -97,6 +100,11 @@ let videoDisplayed = false;
 let textDisplayed = false; 
 let lightbulbDisplayed = false;
 let manBabyFinished = false;
+let transitioning = false;
+
+let ampAnalyzer; // To analyze audio amplitude
+let distortionStrength = 0; // Used to control the intensity of distortion
+
 
 
 function preload() {
@@ -213,6 +221,15 @@ function draw() {
       showEndScene(); // Scene 18: Happy ending
     }
   }
+
+  if (!transitioning) {
+    // Display the second scene after the transition ends
+    image(blurBathroomImg, 0, 0, width, height);
+  } else {
+    // Draw the radial wipe effect
+    drawRadialWipe();
+  }
+
 }
 
 
@@ -232,6 +249,39 @@ function mousePressed() {
         console.error("Error audio isn't working", err);
       });
     }
+  }
+}
+
+function drawRadialWipe() {
+  let elapsedTime = millis() - transitionStartTime;
+  let progress = constrain(elapsedTime / transitionDuration, 0, 1); // Progress from 0 to 1
+
+  // Draw the first scene
+  image(kitchenBg, 0, 0, width, height);
+
+  // Apply the mask for the radial wipe
+  push();
+  translate(width / 2, height / 2); // Center of the canvas
+  let maxRadius = dist(0, 0, width / 2, height / 2); // Max radius for the arc
+
+  // Create a graphics layer for masking
+  let maskGraphics = createGraphics(width, height);
+  maskGraphics.background(0);
+  maskGraphics.translate(width / 2, height / 2);
+  maskGraphics.fill(255);
+  maskGraphics.noStroke();
+  maskGraphics.arc(0, 0, maxRadius * 2, maxRadius * 2, -HALF_PI, -HALF_PI + TWO_PI * progress, PIE);
+
+  // Apply the masked second scene
+  image(blurBathroomImg, 0, 0, width, height);
+  let imgMask = maskGraphics.get();
+  blendMode(MULTIPLY);
+  image(imgMask, 0, 0, width, height);
+  pop();
+
+  // End the transition after completion
+  if (progress === 1) {
+    transitioning = false;
   }
 }
 
@@ -549,18 +599,68 @@ function imageDistortion() {
 }
 
 
-function displayVideoCapture() {
-  // keeps static background image
-  image(weirdFaceImg, 0, 0, width, height); // Original mirror image (not distorted)
+function nonlinearGridEffect(graphics, t) {
+  let img = graphics.get(); // Gets the current video frame
+  img.loadPixels(); 
 
-  // Video capture 
-  videoGraphics.image(capture, 0, 0, videoGraphics.width, videoGraphics.height);
-  //inverted filter
-  videoGraphics.filter(INVERT); 
+  let resultGraphics = createGraphics(graphics.width, graphics.height);
 
-  // Video capture displayed ontop of mirror
-  image(videoGraphics, mirrorX, mirrorY, mirrorWidth, mirrorHeight);
+  for (let x = 0; x < img.width; x += 20) {
+    for (let y = 0; y < img.height; y += 20) {
+      // gets distortion based on time and grid position
+      // https://p5js.org/reference/p5/atan2/
+      let angle = atan2(y - img.height / 2, x - img.width / 2);
+      let distFromCenter = dist(x, y, img.width / 2, img.height / 2);
+
+      // movement that is evolving over time
+      let offsetX = sin(angle + t) * sin(distFromCenter * 0.02 + t) * 10;
+      let offsetY = cos(angle + t) * cos(distFromCenter * 0.02 + t) * 10;
+
+      // keeps coordinates in limit
+      let sx = constrain(x + offsetX, 0, img.width - 20);
+      let sy = constrain(y + offsetY, 0, img.height - 20);
+
+      resultGraphics.copy(img, x, y, 20, 20, sx, sy, 20, 20);
+    }
+  }
+
+  resultGraphics.filter(INVERT); 
+  return resultGraphics;
 }
+
+
+
+
+
+
+
+
+
+
+function displayVideoCapture() {
+  if (captureStartTime === 0) {
+    captureStartTime = millis(); // Start timing when the function is first called
+  }
+
+  let elapsedTime = millis() - captureStartTime; // Calculate elapsed time
+  let t = millis() * 0.001; // Time variable for animation
+
+  if (elapsedTime < 2000) {
+    // Display regular inverted video capture
+    videoGraphics.image(capture, 0, 0, videoGraphics.width, videoGraphics.height);
+    videoGraphics.filter(INVERT); // Apply inverted filter directly to the video graphics
+    image(videoGraphics, mirrorX, mirrorY, mirrorWidth, mirrorHeight);
+  } else if (elapsedTime < 5000) {
+    // From 2 to 5 seconds, display the nonlinear grid effect
+    let distortedGraphics = nonlinearGridEffect(videoGraphics, t);
+    distortedGraphics.filter(INVERT); // Apply inverted filter to the distorted grid graphics
+    image(distortedGraphics, mirrorX, mirrorY, mirrorWidth, mirrorHeight);
+  } else {
+    // Reset or transition after 5 seconds
+    captureStartTime = millis(); // Reset for another cycle or transition
+  }
+}
+
 
 
 function displayTextOverlay() {
@@ -673,6 +773,7 @@ function babyMan() {
 }
 
 
+
 // Scene 10: Returning to mirror and "what's going on" text
 function postBabyManScene() {
   let timeElapsed = millis() - postBabyManStartTime;
@@ -698,6 +799,7 @@ function postBabyManScene() {
     medicineSceneStartTime = millis();
   }
 }
+
 
 
 // Scene 11: Medicine shelf appears
@@ -815,6 +917,7 @@ function wakeUpScene() {
     }
   }
 }
+
 
 
 //scene 17: ending scene
