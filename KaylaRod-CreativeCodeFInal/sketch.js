@@ -80,8 +80,6 @@ let blackScreenTimer = 0;
 let weirdFaceStartTime = 0;
 let uhOhTimer = 0;
 let captureStartTime = 0;
-let transitionStartTime;
-let transitionDuration = 3000; 
 
 //mirror distortions 
 let capture; // Video capture
@@ -101,11 +99,11 @@ let textDisplayed = false;
 let lightbulbDisplayed = false;
 let manBabyFinished = false;
 let transitioning = false;
-
-let ampAnalyzer; // To analyze audio amplitude
-let distortionStrength = 0; // Used to control the intensity of distortion
+let yaySoundPlayed = false;
 
 
+let rippleShift = 20;
+let rippleFreq = 0.05;
 
 function preload() {
   soundFormats('mp3'); //p5 reference 
@@ -221,16 +219,8 @@ function draw() {
       showEndScene(); // Scene 18: Happy ending
     }
   }
-
-  if (!transitioning) {
-    // Display the second scene after the transition ends
-    image(blurBathroomImg, 0, 0, width, height);
-  } else {
-    // Draw the radial wipe effect
-    drawRadialWipe();
   }
-
-}
+  
 
 
 function mousePressed() {
@@ -252,38 +242,6 @@ function mousePressed() {
   }
 }
 
-function drawRadialWipe() {
-  let elapsedTime = millis() - transitionStartTime;
-  let progress = constrain(elapsedTime / transitionDuration, 0, 1); // Progress from 0 to 1
-
-  // Draw the first scene
-  image(kitchenBg, 0, 0, width, height);
-
-  // Apply the mask for the radial wipe
-  push();
-  translate(width / 2, height / 2); // Center of the canvas
-  let maxRadius = dist(0, 0, width / 2, height / 2); // Max radius for the arc
-
-  // Create a graphics layer for masking
-  let maskGraphics = createGraphics(width, height);
-  maskGraphics.background(0);
-  maskGraphics.translate(width / 2, height / 2);
-  maskGraphics.fill(255);
-  maskGraphics.noStroke();
-  maskGraphics.arc(0, 0, maxRadius * 2, maxRadius * 2, -HALF_PI, -HALF_PI + TWO_PI * progress, PIE);
-
-  // Apply the masked second scene
-  image(blurBathroomImg, 0, 0, width, height);
-  let imgMask = maskGraphics.get();
-  blendMode(MULTIPLY);
-  image(imgMask, 0, 0, width, height);
-  pop();
-
-  // End the transition after completion
-  if (progress === 1) {
-    transitioning = false;
-  }
-}
 
 // Scene 1: Introduction scene
 function showIntro() {
@@ -365,9 +323,6 @@ function eatingScene() {
 
 }
 
-let rippleShift = 20;
-let rippleFreq = 0.05;
-
 // Scene 4: After eating
 function postEatingScene() {
   if (fartStartTime === 0) {
@@ -429,7 +384,7 @@ function fartRipple() {
   background(0); // Clear background for redraw
   for (let y = 0; y < kitchenBg.height; y++) { //each row of pixles
     let offset = sin(y * rippleFreq + millis() * 0.001) * rippleShift; //creates wave effect on the row of pixels 
-    //each row of img is drawn with the shift
+    //each row of img is drawn with the shifted pixels
     copy(
       kitchenBg,
       0, y, kitchenBg.width, 1,  
@@ -454,7 +409,7 @@ function thinkScene() {
   }
 
   // Show cookie image for 2 seconds
-  else if (timePassed >= 1000 && timePassed < 3000) {
+  else if (timePassed >= 1000 && timePassed < 2000) {
     image(foreheadImage, 0, 0, width, height); // Keep the forehead background
     image(cookieImage, width / 2 - 150, height / 2 - 150, 400, 400); // Show cookie image
   }
@@ -629,14 +584,6 @@ function nonlinearGridEffect(graphics, t) {
 }
 
 
-
-
-
-
-
-
-
-
 function displayVideoCapture() {
   if (captureStartTime === 0) {
     captureStartTime = millis(); // Start timing when the function is first called
@@ -807,11 +754,15 @@ function displayMedicineScene() {
   if (medicineSceneStartTime === 0) medicineSceneStartTime = millis();
   let timeElapsed = millis() - medicineSceneStartTime;
 
-  if (timeElapsed < yaySound.duration() * 1000 + 2000) {
-    // Display medicine shelf and play yay sound
-    image(medicineShelfImg, 0, 0, width, height);
-    if (!yaySound.isPlaying()) yaySound.play();// Play the "yay" sound if it's not already playing
-  } else {
+  image(medicineShelfImg, 0, 0, width, height);
+
+  // Play "yay" sound only once
+  if (!yaySoundPlayed) {
+    yaySound.play(); // Play the sound
+    yaySoundPlayed = true; // Set flag to true
+  }
+
+  if (timeElapsed > yaySound.duration() * 1000 + 1000) {
     scene = 12; 
     blackScreenTimer = millis();
   }
