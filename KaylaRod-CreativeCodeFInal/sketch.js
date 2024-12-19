@@ -315,49 +315,50 @@ function eatingScene() {
 
 }
 
+let rippleShift = 20;
+let rippleFreq = 0.05;
 
 // Scene 4: After eating
 function postEatingScene() {
-  image(kitchenBg, 0, 0);
-
   if (fartStartTime === 0) {
-    // start time for "That was yum-"
+    // Start timer 
     fartStartTime = millis();
   }
 
   let timeSinceStart = millis() - fartStartTime;
 
   if (timeSinceStart < 2000) {
-    image(odysseusSprite, odysseusX, odysseusY, 200, 322); 
+    image(kitchenBg, 0, 0);
+    image(odysseusSprite, odysseusX, odysseusY, 200, 322);
+    // Speech bubble      
     fill(255);
-    // Speech bubble
     ellipse(odysseusX + 50, odysseusY - 50, 200, 100); 
     fill(0);
     text("That was yum-", odysseusX + 50, odysseusY - 50);
+  
   } else if (timeSinceStart < 3000 + fartSound.duration() * 1000) {
-    // Play fart sound and show shocked sprite
+    // Play fart sound and ripple background
     if (!fartPlayed) {
       playSound(fartSound);
-      // fart sound only plays once
-      fartPlayed = true; 
+      fartPlayed = true;
     }
-    // Show shocked sprite
-    image(odysseusShockedSprite, odysseusX, odysseusY, 200, 322); 
+
+    // fart ripple effect
+    fartRipple();
+    image(odysseusShockedSprite, odysseusX, odysseusY, 200, 322);
   } else {
-
-    image(odysseusSprite, odysseusX, odysseusY, 200, 322); 
-
+    // Reset to normal background
+    image(kitchenBg, 0, 0);
+    image(odysseusSprite, odysseusX, odysseusY, 200, 322);
     let timeSinceFartEnd = timeSinceStart - (2000 + fartSound.duration() * 1000);
 
-    // Show lightbulb for 2 seconds
     if (timeSinceFartEnd < 2000) {
       if (!ideaSoundPlayed) {
         playSound(ideaSound);
-        ideaSoundPlayed = true; 
+        ideaSoundPlayed = true;
       }
       image(lightbulbImage, odysseusX + 50, odysseusY - 200, 100, 150);
     } else if (timeSinceFartEnd < 4000) {
-
       fill(255);
       ellipse(odysseusX + 50, odysseusY - 50, 300, 100);
       fill(0);
@@ -372,6 +373,21 @@ function postEatingScene() {
     }
   }
 }
+
+// Ripple fart function
+function fartRipple() {
+  background(0); // Clear background for redraw
+  for (let y = 0; y < kitchenBg.height; y++) { //each row of pixles
+    let offset = sin(y * rippleFreq + millis() * 0.001) * rippleShift; //creates wave effect on the row of pixels 
+    //each row of img is drawn with the shift
+    copy(
+      kitchenBg,
+      0, y, kitchenBg.width, 1,  
+      offset, y, kitchenBg.width, 1 
+    );
+  }
+}
+
 
 
 // Scene 5: Thinking about the medicine
@@ -799,27 +815,6 @@ function wakeUpScene() {
     }
   }
 }
-
-
-// // Scene 17: Odysseus goes for lunch
-// function hungryAndLunchScene() {
-//   image(blurBathroomImg, 0, 0, width, height);
-
-//   if (!moveOffScreen) moveOffScreen = true;
-
-//   if (moveOffScreen) {
-//     odysseusX += 4;
-//     image(odysseusSprite, odysseusX, height / 2, 200, 322);
-//   }
-
-//   fill(255);
-//   textSize(30);
-//   text("I think it's time for lunch!", width / 2, height / 2 + 100);
-
-//   if (odysseusX > width) {
-//     scene = 18; // Move to the final end scene
-//   }
-// }
 
 
 //scene 17: ending scene
