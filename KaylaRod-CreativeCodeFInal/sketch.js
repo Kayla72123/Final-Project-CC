@@ -43,6 +43,9 @@ let snoreSound
 let yawnSound; 
 let hungrySound;
 let happySong;
+let dreamSound;
+let hourglassSound;
+let slideSound;
 
 //browser blocks automatic sounds
 let soundEnabled = false;
@@ -60,6 +63,10 @@ let yawnPlayed = false;
 let snorePlayed = false;
 let odysseusAsleep = false;
 let moveOffScreen = false;
+let dreamSoundPlayed = false;
+let hourglassSoundPlayed = false; 
+let hourglassSoundPlaying = false;
+let slideSoundPlayed = false;
 
 
 // Timer
@@ -139,6 +146,9 @@ function preload() {
   yawnSound = loadSound('sound/yawn.mp3');
   hungrySound = loadSound('sound/hungry.mp3');
   happySong = loadSound('sound/happyLittleSong.mp3');
+  dreamSound = loadSound('sound/dream.mp3');
+  hourglassSound = loadSound('sound/hourglass.mp3');
+  slideSound = loadSound('sound/slide.mp3');
 }
 
 
@@ -303,8 +313,13 @@ function eatingScene() {
   image(odysseusSprite, odysseusX, odysseusY, 200, 322);
 
   fill(255);
+  ellipse(odysseusX + 50, odysseusY - 50, 200, 100); 
+
+  // Draw text inside the bubble
+  fill(0); 
   textSize(20);
-  text("MUNCH! GULP!", width / 2, height / 2 - 50);
+  textAlign(CENTER, CENTER);
+  text("MUNCH! GULP!", odysseusX + 50, odysseusY - 50);
 
   if (munchStartTime === 0) {
     munchStartTime = millis(); 
@@ -416,7 +431,6 @@ function thinkScene() {
 
   else if (timePassed >= 3000 && timePassed < 5000) {
     image(foreheadImage, 0, 0, width, height); 
-    image(cookieImage, width / 2 - 150, height / 2 - 150, 400, 400); 
     fill(255);
     ellipse(width / 2, height / 2 - 100, 300, 100); 
     fill(0);
@@ -498,7 +512,11 @@ function blurryWalk() {
   }
 
   // Display text
-  fill(255);
+  fill(255); 
+  ellipse(width / 2, 50, 500, 100); 
+
+  // Draw text inside the bubble
+  fill(0); 
   textSize(30);
   textAlign(CENTER, CENTER);
   text("Why does everything look funny?", width / 2, 50);
@@ -520,6 +538,7 @@ function blurryWalk() {
 
 
 function imageDistortion() {
+  
   //the image is going to be distorted and take rectangles from the grid of the image 
   // and randomly displace them to brake the image into little rectangles 
   // give the appearance that the image is broken and shaking around
@@ -547,8 +566,7 @@ function imageDistortion() {
         //this makes ure the image is broken into equal parts 
         // this controls how big each of the cells should be 
         weirdFaceImg.width / gridSize,
-        weirdFaceImg.height / gridSize
-      );
+        weirdFaceImg.height / gridSize);
     }
   }
 }
@@ -617,12 +635,17 @@ function displayTextOverlay() {
   }
   let timePassed = millis() - textStartTime;
 
-  fill(255);
-  textSize(30);
-  textAlign(CENTER, CENTER);
+  
+
 
   if (timePassed < 3000) {
     // 1st message for 3 seconds
+    fill(255); // White for the bubble
+    ellipse(width/2, height - 100, 350, 100); // Bubble position adjusted relative to odysseus
+
+    fill(0); // Black for the text
+    textSize(20);
+    textAlign(CENTER, CENTER);
     text("What's happening?! Who AM I??", width / 2, height - 100);
   }
 }
@@ -636,6 +659,10 @@ function weirdFace() {
     weirdFaceStartTime = millis(); 
   }
   let timePassed = millis() - weirdFaceStartTime;
+
+  if (timePassed < 4000 && !hourglassSound.isPlaying()) {
+    hourglassSound.play(); // Play the hourglass sound
+  }
 
   if (timePassed < 4000) {
     // call image distortion function 
@@ -654,7 +681,9 @@ function weirdFace() {
     //show text
     displayTextOverlay();
   } else {
-    scene = 9;
+    hourglassSound.stop();
+    scene = 9; 
+    hourglassSoundPlayed = false;
   }
 }
 
@@ -729,16 +758,25 @@ function postBabyManScene() {
     background(0);
     image(mirrorImage, 0, 0, width, height);
     fill(255);
-    textSize(30);
-    //show text for 3 seconds
-    text("I don't know what's going on anymore...", width / 2, height - 100);
+    ellipse(width / 2, 580, 500, 100); 
+    
+    fill(0);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text("I don't know what's going on anymore...", width/2, 580);
+    
+
   } else if (timeElapsed < 6000) {
     background(0);
     image(mirrorImage, 0, 0, width, height);
     fill(255);
-    textSize(30);
-    //show text for next 3 seconds
-    text("Oh yeah, my medicine!", width / 2, height - 100);
+    // Position the speech bubble above Odysseus
+    ellipse(width / 2, 580, 300, 100); 
+    
+    fill(0);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text("Oh yeah, my medicine!", width/2, 580);
   } else if (!doorSound.isPlaying()) {
     background(0);
     doorSound.play();
@@ -790,9 +828,24 @@ function displayCabinetWithText() {
   let timeElapsed = millis() - medicineSceneStartTime;
 
   image(medicineShelfImg, 0, 0, width, height);
+
+  
+
   fill(255);
+  ellipse(width/2, 580, 300, 100); 
+  fill(0);
   textSize(30);
-  text("I feel sleepyyy...", width / 2, height / 2 + 100);
+  textAlign(CENTER, CENTER);
+
+  // Display the text inside the bubble
+  text("I feel sleepyyy...", width/2, 580); 
+  
+  if (timeElapsed > 500) {
+    if (!slideSoundPlayed) {
+      slideSound.play(); // Play the sound only once
+      slideSoundPlayed = true; 
+    }
+  }
 
   if (timeElapsed > 2000) {
     scene = 14; // Move to fade to black
@@ -804,7 +857,7 @@ function displayCabinetWithText() {
 // Scene 14: Waking Up
 function fadeToBlackScene() {
   background(0, 0, 0, fadeBlack); // Gradual fade
-  fadeBlack += 5;
+  fadeBlack += 2;
 
   if (fadeBlack >= 255 && !snorePlayed) {
     snoreSound.play();
@@ -846,7 +899,13 @@ function wakeUpScene() {
 
   // Display "Wow, how long was I asleep for?"
   if (uhOhTimer === 0) {
+    fill(255);
+    // Speech bubble for "Wow, how long was I asleep for?"
+    ellipse(width / 2, height / 2 + 100, 500, 100); 
+    fill(0);
+    textSize(30);
     text("Wow, how long was I asleep for?", width / 2, height / 2 + 100);
+
     if (!hungryPlayed && millis() - wakeUpTimer > 3000) {
       hungrySound.play();
       hungryPlayed = true;
@@ -859,6 +918,12 @@ function wakeUpScene() {
 
   // Display "Uh Oh..." for 2 seconds
   if (uhOhTimer > 0) {
+    fill(255);
+    // Speech bubble for "Uh Oh..."
+    ellipse(width / 2, height / 2 + 150, 300, 100);
+    fill(0);
+    textSize(30);
+    text("Uh Oh...", width / 2, height / 2 + 150);
     let elapsed = millis() - uhOhTimer;
     if (elapsed < 2000) {
       text("Uh Oh...", width / 2, height / 2 + 150);
